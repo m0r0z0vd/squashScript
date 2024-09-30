@@ -36,9 +36,9 @@ echo "Squashing $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' into on
 # Create a temporary branch to squash the commits
 git checkout -b temp_squash_branch
 
-# Cherry-pick the commits found in the log
+# Cherry-pick the commits found in the log and resolve conflicts by favoring master changes
 for commit in $COMMIT_LIST; do
-    git cherry-pick -n $commit  # Cherry-pick without committing
+    git cherry-pick -n -X ours $commit  # Automatically resolve conflicts by choosing master changes
 done
 
 # Create a single squashed commit with all changes from the commits

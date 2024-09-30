@@ -30,30 +30,16 @@ if [ "$COMMIT_COUNT" -le 1 ]; then
   exit 0
 fi
 
-# Squash all the commits into a single commit
+# Squash all the commits into a single commit using rebase
 echo "Squashing $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' into one commit..."
 
-# Create a temporary branch to squash the commits
-git checkout -b temp_squash_branch
+# Start an interactive rebase from the first commit matching the pattern
+FIRST_COMMIT=$(git log --reverse --pretty=format:"%H" --grep="^$BRANCH_PATTERN" | head -n 1)
 
-# Cherry-pick the commits found in the log and resolve conflicts by favoring master changes
-for commit in $COMMIT_LIST; do
-    git cherry-pick -n -X ours $commit  # Automatically resolve conflicts by choosing master changes
-done
-
-# Create a single squashed commit with all changes from the commits
-git commit -m "Squashed $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' into one commit"
-
-# Checkout the main branch again
-git checkout $MAIN_BRANCH
-
-# Merge the squashed commit into the main branch
-git merge temp_squash_branch --ff-only
+# Automatically squash all commits from the first commit
+git rebase -i --autosquash $FIRST_COMMIT~1
 
 # Force push the changes to the main branch
 git push origin $MAIN_BRANCH --force
-
-# Clean up the temporary branch
-git branch -d temp_squash_branch
 
 echo "All $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' have been squashed and force-pushed to '$MAIN_BRANCH'."

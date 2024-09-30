@@ -2,9 +2,9 @@
 
 set -e
 
-# Check if a branch name or pattern is provided
+# Check if a branch pattern is provided
 if [ -z "$1" ]; then
-  echo "Please provide a branch name or pattern as a parameter."
+  echo "Please provide a branch pattern (e.g., branch1 or DSS-3990)."
   exit 1
 fi
 
@@ -17,42 +17,43 @@ git fetch
 # Checkout the main branch
 git checkout $MAIN_BRANCH
 
-# Identify commits that match the Jira ticket pattern in commit messages
+# Find all commits in the main branch with commit messages that match the branch pattern
 echo "Searching for commits with pattern '$BRANCH_PATTERN' in '$MAIN_BRANCH'..."
-
-# List all commits that contain the branch pattern in the commit message
 COMMIT_LIST=$(git log --pretty=format:"%H" --grep="^$BRANCH_PATTERN")
 
-if [ -z "$COMMIT_LIST" ]; then
-  echo "No commits with pattern '$BRANCH_PATTERN' found to squash."
+# Count the number of commits found
+COMMIT_COUNT=$(echo "$COMMIT_LIST" | wc -l)
+
+# If there is 1 commit or less, exit without doing anything
+if [ "$COMMIT_COUNT" -le 1 ]; then
+  echo "Only $COMMIT_COUNT commit(s) found with pattern '$BRANCH_PATTERN'. No need to squash."
   exit 0
-else
-  echo "Found commits matching '$BRANCH_PATTERN'. Proceeding to squash them into '$MAIN_BRANCH'..."
-
-  # Create a new temporary branch to handle the squash
-  git checkout -b temp_squash_branch
-
-  # Cherry-pick the found commits and automatically resolve conflicts by preferring master changes
-  for commit in $COMMIT_LIST; do
-    git cherry-pick -X ours $commit  # Automatically resolve conflicts by choosing master changes
-  done
-
-  # Squash the commits into one
-  git reset --soft HEAD~$(echo "$COMMIT_LIST" | wc -l)
-  git add -A
-  git commit -m "Squashed commits matching pattern '$BRANCH_PATTERN' into '$MAIN_BRANCH'"
-
-  # Checkout the main branch again
-  git checkout $MAIN_BRANCH
-
-  # Merge the squashed commit back into the main branch
-  git merge --ff-only temp_squash_branch
-
-  # Force push the changes to the remote main branch
-  git push origin $MAIN_BRANCH --force
-
-  # Clean up the temporary branch
-  git branch -d temp_squash_branch
-
-  echo "Commits matching '$BRANCH_PATTERN' squashed into '$MAIN_BRANCH', and changes have been force-pushed."
 fi
+
+# Squash all the commits into a single commit
+echo "Squashing $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' into one commit..."
+
+# Create a temporary branch to squash the commits
+git checkout -b temp_squash_branch
+
+# Cherry-pick the commits found in the log
+for commit in $COMMIT_LIST; do
+    git cherry-pick -n $commit  # Cherry-pick without committing
+done
+
+# Create a single squashed commit with all changes from the commits
+git commit -m "Squashed $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' into one commit"
+
+# Checkout the main branch again
+git checkout $MAIN_BRANCH
+
+# Merge the squashed commit into the main branch
+git merge temp_squash_branch --ff-only
+
+# Force push the changes to the main branch
+git push origin $MAIN_BRANCH --force
+
+# Clean up the temporary branch
+git branch -d temp_squash_branch
+
+echo "All $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' have been squashed and force-pushed to '$MAIN_BRANCH'."

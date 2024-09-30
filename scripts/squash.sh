@@ -4,7 +4,7 @@ set -e
 
 # Check if a branch pattern is provided
 if [ -z "$1" ]; then
-  echo "Please provide a branch pattern (e.g., branch4)."
+  echo "Please provide a branch pattern (e.g., DSS-4000)."
   exit 1
 fi
 

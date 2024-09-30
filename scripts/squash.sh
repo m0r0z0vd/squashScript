@@ -33,13 +33,21 @@ fi
 # Squash all the commits into a single commit using rebase
 echo "Squashing $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' into one commit..."
 
-# Start an interactive rebase from the first commit matching the pattern
-FIRST_COMMIT=$(git log --reverse --pretty=format:"%H" --grep="^$BRANCH_PATTERN" | head -n 1)
+# Create a temporary file to store the commits to be squashed
+TEMP_FILE=$(mktemp)
 
-# Automatically squash all commits from the first commit
-git rebase -i --autosquash $FIRST_COMMIT~1
+# Fill the temp file with the commits to be squashed
+for commit in $COMMIT_LIST; do
+    echo "$commit squash" >> $TEMP_FILE
+done
+
+# Use interactive rebase with an exact list of commits to squash
+git rebase -i --autosquash $(tail -n 1 <<< "$COMMIT_LIST")
 
 # Force push the changes to the main branch
 git push origin $MAIN_BRANCH --force
+
+# Clean up temporary file
+rm $TEMP_FILE
 
 echo "All $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' have been squashed and force-pushed to '$MAIN_BRANCH'."

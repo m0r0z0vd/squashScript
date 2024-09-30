@@ -56,9 +56,9 @@ git checkout $MAIN_BRANCH
 # Merge the squashed commit into the main branch
 git merge temp_squash_branch --ff-only
 
-# Use git filter-branch to remove the original branch1 commits from history
+# Use git filter-branch to remove the original branch1 commits from history, forcing overwrite of previous backup
 echo "Rewriting history to remove original commits..."
-git filter-branch --commit-filter '
+git filter-branch -f --commit-filter '
 if git log -1 --pretty=%B $GIT_COMMIT | grep -q "^'$BRANCH_PATTERN'";
 then
     skip_commit "$@";

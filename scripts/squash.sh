@@ -4,7 +4,7 @@ set -e
 
 # Check if a branch pattern is provided
 if [ -z "$1" ]; then
-  echo "Please provide a branch pattern (e.g., branch1 or DSS-3990)."
+  echo "Please provide a branch pattern (e.g., branch4)."
   exit 1
 fi
 
@@ -56,15 +56,15 @@ git checkout $MAIN_BRANCH
 # Merge the squashed commit into the main branch
 git merge temp_squash_branch --ff-only
 
-# Use git filter-branch to remove the original branch1 commits from history, forcing overwrite of previous backup
+# Use git filter-branch to remove the original commits from history
 echo "Rewriting history to remove original commits..."
-git filter-branch -f --commit-filter '
-if git log -1 --pretty=%B $GIT_COMMIT | grep -q "^'$BRANCH_PATTERN'";
+git filter-branch -f --commit-filter "
+if git log -1 --pretty=%B \$GIT_COMMIT | grep -q \"^$BRANCH_PATTERN\";
 then
-    skip_commit "$@";
+    skip_commit \"\$@\";
 else
-    git commit-tree "$@";
-fi' -- HEAD
+    git commit-tree \"\$@\";
+fi" -- HEAD
 
 # Force push the changes to the main branch
 git push origin $MAIN_BRANCH --force

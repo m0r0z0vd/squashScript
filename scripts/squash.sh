@@ -27,28 +27,43 @@ if git branch --merged $MAIN_BRANCH | grep -q "$BRANCH_NAME"; then
   # Checkout the main branch
   git checkout $MAIN_BRANCH
 
-  # Find the merge commit that brought the branch into the main branch
+  # Now we will find the commits that were introduced by branch1, excluding other commits in master
+  # Use cherry-pick to squash only the relevant commits
+
+  # Get the merge base between the main branch and the branch
   MERGE_BASE=$(git merge-base $MAIN_BRANCH $BRANCH_NAME)
 
-  # Calculate the number of commits that were made on the branch before the merge
-  # Compare commits made on the branch after the merge base
-  COMMIT_COUNT=$(git rev-list --count $MERGE_BASE..$BRANCH_NAME)
+  # List all commits made on branch1
+  COMMIT_LIST=$(git rev-list --reverse $MERGE_BASE..$BRANCH_NAME)
 
-  if [ "$COMMIT_COUNT" -le 1 ]; then
-    echo "Branch '$BRANCH_NAME' has only $COMMIT_COUNT commit(s). No need to squash on '$MAIN_BRANCH'."
+  if [ -z "$COMMIT_LIST" ]; then
+    echo "No commits to squash from branch '$BRANCH_NAME'."
     exit 0
   else
-    echo "Branch '$BRANCH_NAME' has $COMMIT_COUNT commits to squash into '$MAIN_BRANCH'."
+    echo "Branch '$BRANCH_NAME' has commits to squash into '$MAIN_BRANCH'. Proceeding..."
 
-    # Squash the commits by resetting the main branch to the merge base
+    # Create a new temporary branch to handle the squash
+    git checkout -b temp_squash_branch
+
+    # Cherry-pick all the commits from the branch
+    git cherry-pick $COMMIT_LIST
+
+    # Squash the commits into one
     git reset --soft $MERGE_BASE
-
-    # Add all changes and create a new squashed commit on the main branch
     git add -A
-    git commit -m "Squashed $COMMIT_COUNT commits from branch '$BRANCH_NAME' into '$MAIN_BRANCH'"
+    git commit -m "Squashed commits from branch '$BRANCH_NAME' into '$MAIN_BRANCH'"
+
+    # Checkout the main branch again
+    git checkout $MAIN_BRANCH
+
+    # Merge the squashed commit back into the main branch
+    git merge --ff-only temp_squash_branch
 
     # Force push the changes to the remote main branch
     git push origin $MAIN_BRANCH --force
+
+    # Clean up the temporary branch
+    git branch -d temp_squash_branch
 
     echo "Commits squashed from branch '$BRANCH_NAME' into '$MAIN_BRANCH', and the changes have been force-pushed."
   fi

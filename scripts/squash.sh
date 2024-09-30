@@ -70,6 +70,6 @@ fi' -- HEAD
 git push origin $MAIN_BRANCH --force
 
 # Clean up temporary branch
-git branch -d temp_squash_branch
+git branch -D temp_squash_branch
 
 echo "All $COMMIT_COUNT commits matching pattern '$BRANCH_PATTERN' have been squashed, original commits removed, and force-pushed to '$MAIN_BRANCH'."

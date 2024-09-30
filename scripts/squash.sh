@@ -27,29 +27,29 @@ if git branch --merged $MAIN_BRANCH | grep -q "$BRANCH_NAME"; then
   # Checkout the main branch
   git checkout $MAIN_BRANCH
 
-  # Now we will find the commits that were introduced by branch1, excluding other commits in master
-  # Use cherry-pick to squash only the relevant commits
+  # Find the commits from the original branch (branch1) in develop
+  echo "Searching for commits from '$BRANCH_NAME'..."
 
-  # Get the merge base between the main branch and the branch
-  MERGE_BASE=$(git merge-base $MAIN_BRANCH $BRANCH_NAME)
+  # Find the merge base between develop and the original branch
+  DEVELOP_BASE=$(git merge-base develop $BRANCH_NAME)
 
-  # List all commits made on branch1
-  COMMIT_LIST=$(git rev-list --reverse $MERGE_BASE..$BRANCH_NAME)
+  # List commits from branch1 that were merged into develop
+  COMMIT_LIST=$(git log --pretty=format:"%H" $DEVELOP_BASE..$BRANCH_NAME)
 
   if [ -z "$COMMIT_LIST" ]; then
-    echo "No commits to squash from branch '$BRANCH_NAME'."
+    echo "No commits from branch '$BRANCH_NAME' found to squash."
     exit 0
   else
-    echo "Branch '$BRANCH_NAME' has commits to squash into '$MAIN_BRANCH'. Proceeding..."
+    echo "Found commits from branch '$BRANCH_NAME'. Squashing them into '$MAIN_BRANCH'..."
 
     # Create a new temporary branch to handle the squash
     git checkout -b temp_squash_branch
 
-    # Cherry-pick all the commits from the branch
+    # Cherry-pick all the commits from the original branch (that passed through develop)
     git cherry-pick $COMMIT_LIST
 
     # Squash the commits into one
-    git reset --soft $MERGE_BASE
+    git reset --soft $DEVELOP_BASE
     git add -A
     git commit -m "Squashed commits from branch '$BRANCH_NAME' into '$MAIN_BRANCH'"
 
@@ -65,7 +65,7 @@ if git branch --merged $MAIN_BRANCH | grep -q "$BRANCH_NAME"; then
     # Clean up the temporary branch
     git branch -d temp_squash_branch
 
-    echo "Commits squashed from branch '$BRANCH_NAME' into '$MAIN_BRANCH', and the changes have been force-pushed."
+    echo "Commits from branch '$BRANCH_NAME' squashed into '$MAIN_BRANCH', and changes have been force-pushed."
   fi
 else
   echo "Branch '$BRANCH_NAME' is not merged into '$MAIN_BRANCH'. No squashing will be done."

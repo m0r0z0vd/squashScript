@@ -11,12 +11,6 @@ fi
 BRANCH_PATTERN=$1
 MAIN_BRANCH=${2:-master}  # Use 'master' as default if no second parameter is provided
 
-# Remove the temp_squash_branch if it already exists
-if git branch --list temp_squash_branch; then
-  echo "Removing existing temp_squash_branch..."
-  git branch -D temp_squash_branch
-fi
-
 # Fetch the latest branches
 git fetch
 

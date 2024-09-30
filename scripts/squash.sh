@@ -32,9 +32,9 @@ else
   # Create a new temporary branch to handle the squash
   git checkout -b temp_squash_branch
 
-  # Cherry-pick the found commits and automatically resolve conflicts by preferring branch1 changes
+  # Cherry-pick the found commits and automatically resolve conflicts by preferring master changes
   for commit in $COMMIT_LIST; do
-    git cherry-pick -X theirs $commit  # Automatically resolve conflicts by choosing branch1's changes
+    git cherry-pick -X ours $commit  # Automatically resolve conflicts by choosing master changes
   done
 
   # Squash the commits into one

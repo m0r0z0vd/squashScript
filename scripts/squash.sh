@@ -50,9 +50,9 @@ git checkout $MAIN_BRANCH
 # Merge the squashed commit into the main branch
 git merge temp_squash_branch --ff-only
 
-# Rebase and remove the original individual commits
+# Rebase and remove the original individual commits, bypassing the editor for commit messages
 echo "Removing original commits from history..."
-git rebase -i --rebase-merges $(git merge-base $MAIN_BRANCH temp_squash_branch)
+GIT_EDITOR=true git rebase -i --autosquash $(git merge-base $MAIN_BRANCH temp_squash_branch)
 
 # Force push the changes to the main branch
 git push origin $MAIN_BRANCH --force

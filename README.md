@@ -1,0 +1,2 @@
+# squashScript
+Testing squash script
